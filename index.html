@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gantt MOFT 2027</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#052e16;color:#e2e8f0;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:#132a1e;border-bottom:1px solid #14532d;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+#topbar h1{font-size:14px;font-weight:700;color:#f1f5f9}
+#countLabel{font-size:11px;color:#4ade80;margin-left:auto}
+.btn{padding:3px 10px;border-radius:4px;border:1px solid #166534;background:#052e16;color:#94a3b8;cursor:pointer;font-size:11px;white-space:nowrap}
+.btn:hover{background:#166534;color:#e2e8f0}
+.btn-p{background:#10b981;border-color:#10b981;color:#fff}.btn-p:hover{background:#059669}
+.btn-amber{background:#92400e;border-color:#b45309;color:#fde68a}.btn-amber:hover{background:#b45309}
+#filterPanel{background:#132a1e;border-bottom:1px solid #14532d;padding:7px 16px;flex-shrink:0}
+.frow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.flbl{font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;min-width:50px}
+#paqGrid{display:flex;flex-wrap:wrap;gap:4px}
+.pchip{display:flex;align-items:center;gap:4px;border-radius:5px;padding:2px 7px;cursor:pointer;border:2px solid transparent;background:#052e16;transition:border-color .12s}
+.pchip input{display:none}
+.pchip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pchip .lbl{font-size:11px;color:#4ade80;font-weight:600}
+.pchip.on{border-color:var(--c)}.pchip.on .lbl{color:#f1f5f9}
+.finput{background:#052e16;border:1px solid #14532d;border-radius:4px;color:#e2e8f0;padding:3px 8px;font-size:11px;outline:none;width:170px}
+.finput:focus{border-color:#10b981}
+.fselect{background:#052e16;border:1px solid #14532d;border-radius:4px;color:#e2e8f0;padding:3px 8px;font-size:11px;outline:none;cursor:pointer;min-width:155px}
+.fselect:focus{border-color:#10b981}
+#legend{display:flex;gap:10px;align-items:center;padding:4px 16px;background:#132a1e;border-bottom:1px solid #14532d;flex-shrink:0;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:#4ade80}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#mainRow{flex:1;display:flex;overflow:hidden}
+/* SIDEBAR */
+#sidebar{width:0;flex-shrink:0;background:#0d1a2e;border-right:2px solid #064e3b;overflow:hidden;transition:width .25s ease;display:flex;flex-direction:column}
+#sidebar.open{width:310px}
+#sbHead{padding:10px 14px 8px;border-bottom:1px solid #064e3b;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#sbHead h2{font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.07em}
+#sbHead .close{cursor:pointer;color:#4ade80;font-size:14px;line-height:1;padding:2px 5px;border-radius:3px}
+#sbHead .close:hover{color:#e2e8f0;background:#166534}
+#sbSubtitle{padding:5px 14px 6px;font-size:9px;color:#166534;border-bottom:1px solid #132a1e;flex-shrink:0;line-height:1.4}
+#cyclesScroll{flex:1;overflow-y:auto;padding:8px 10px 12px}
+#cyclesScroll::-webkit-scrollbar{width:5px}
+#cyclesScroll::-webkit-scrollbar-track{background:#0d1a2e}
+#cyclesScroll::-webkit-scrollbar-thumb{background:#064e3b;border-radius:3px}
+.cyc-paq{margin-bottom:10px;border-radius:6px;overflow:hidden;border:1px solid #132a1e}
+.cyc-paq-hdr{display:flex;align-items:center;gap:6px;padding:5px 10px;background:#052e16}
+.cyc-paq-hdr .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cyc-paq-hdr .pname{font-size:11px;font-weight:700;color:#f1f5f9}
+.cyc-bars{padding:6px 10px 8px;background:#050d1a;display:flex;flex-direction:column;gap:5px}
+.cyc-row{display:flex;align-items:center;gap:6px}
+.cyc-lbl{font-size:10px;color:#4ade80;width:72px;flex-shrink:0;text-align:right}
+.cyc-track{flex:1;height:8px;background:#132a1e;border-radius:4px;overflow:visible;position:relative}
+.cyc-fill{height:100%;border-radius:4px;position:relative}
+.cyc-avg-mark{position:absolute;top:-3px;width:2px;height:14px;background:#f59e0b;border-radius:1px;z-index:2}
+.cyc-val{font-size:10px;font-weight:700;width:38px;flex-shrink:0;text-align:right}
+.cyc-total-row{display:flex;align-items:center;justify-content:space-between;margin-top:5px;padding-top:5px;border-top:1px solid #064e3b}
+.cyc-total-lbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em}
+.cyc-total-val{font-size:13px;font-weight:700;color:#fde68a}
+.val-hi{color:#f87171}.val-lo{color:#4ade80}.val-ok{color:#94a3b8}
+#sbAvg{flex-shrink:0;border-top:1px solid #064e3b;padding:8px 14px 10px;background:#050d1a}
+#sbAvg .avg-title{font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.avg-row2{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.avg-lbl2{font-size:10px;color:#4ade80}
+.avg-val2{font-size:11px;font-weight:700;color:#6ee7b7}
+/* GANTT */
+#ganttArea{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#hdrRow{display:flex;flex-shrink:0;background:#132a1e;border-bottom:1px solid #166534}
+#lhWrap{display:flex;flex-shrink:0;width:500px;height:52px}
+.lh-cell{display:flex;align-items:flex-end;padding:0 8px 5px;border-right:1px solid #14532d;font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+#tlScroll{flex:1;overflow:hidden}
+#tlInner{display:flex;flex-direction:column;height:52px}
+#mRow{display:flex;height:26px;border-bottom:1px solid #14532d}
+#wRow{display:flex;height:26px}
+.mc{flex-shrink:0;border-right:1px solid #14532d;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em}
+.wc{flex-shrink:0;border-right:1px solid #132a1e;display:flex;align-items:center;justify-content:center;font-size:9px;color:#166534}
+#bodyScroll{flex:1;overflow:auto}
+#bodyInner{display:flex}
+#leftCol{width:500px;flex-shrink:0;position:sticky;left:0;z-index:10;background:#052e16}
+#rightCol{position:relative;flex-shrink:0}
+.lr{display:flex;border-bottom:1px solid #132a1e;align-items:stretch}
+.lr-num{width:40px;flex-shrink:0;padding:3px 6px;border-right:1px solid #132a1e;font-size:10px;color:#166534;display:flex;align-items:center;justify-content:center}
+.lr-dep{width:130px;flex-shrink:0;padding:3px 8px;border-right:1px solid #132a1e;font-size:10px;color:#94a3b8;display:flex;align-items:center;word-break:break-word;line-height:1.2}
+.lr-act{flex:1;padding:3px 8px;border-right:1px solid #14532d;font-size:11px;color:#cbd5e1;display:flex;align-items:center;word-break:break-word;line-height:1.2}
+.gr{position:absolute;border-bottom:1px solid #132a1e}
+.gr:hover{background:#132a1e22}
+.bar{position:absolute;border-radius:2px;overflow:hidden;cursor:pointer;display:flex;align-items:center}
+.bar-lbl{position:relative;z-index:1;font-size:8px;color:#fff;padding-left:3px;white-space:nowrap;overflow:hidden;pointer-events:none}
+.vg{position:absolute;top:0;width:1px;background:#132a1e55;pointer-events:none}
+.tday{position:absolute;top:0;width:2px;background:#f59e0b88;pointer-events:none;z-index:20}
+#tooltip{position:fixed;background:#132a1e;border:1px solid #166534;border-radius:6px;padding:10px 14px;font-size:11px;pointer-events:none;z-index:9999;max-width:310px;box-shadow:0 8px 24px #000a;display:none}
+.tt-t{font-weight:700;color:#f1f5f9;margin-bottom:5px;line-height:1.3;font-size:12px}
+.tt-r{color:#4ade80;margin-top:2px}.tt-r b{color:#e2e8f0;font-weight:400}
+.tt-sep{height:1px;background:#166534;margin:5px 0}
+.tt-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+#bodyScroll::-webkit-scrollbar{width:7px;height:7px}
+#bodyScroll::-webkit-scrollbar-track{background:#052e16}
+#bodyScroll::-webkit-scrollbar-thumb{background:#166534;border-radius:3px}
+mark{background:#f59e0b33;color:#fde68a;border-radius:2px;padding:0 1px}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <h1>&#128197; CRONOGRAMA MOFT 2027</h1>
+  <button class="btn btn-amber" onclick="toggleSidebar()">&#128202; Ciclos</button>
+  <span style="color:#14532d;margin:0 2px">|</span>
+  <span id="countLabel">Cargando&hellip;</span>
+</div>
+<div id="filterPanel">
+  <div class="frow" style="margin-bottom:5px">
+    <span class="flbl">Paq</span>
+    <button class="btn btn-p" onclick="selAll()">Todos</button>
+    <button class="btn" onclick="selNone()">Limpiar</button>
+    <button class="btn" onclick="selPaq(1)">PAQ 1</button>
+    <button class="btn" onclick="selPaq(2)">PAQ 2</button>
+    <div id="paqGrid"></div>
+  </div>
+  <div class="frow">
+    <span class="flbl">Depto</span>
+    <select id="selDepto" class="fselect" onchange="render()"><option value="">&#8212; Todos &#8212;</option></select>
+    <span class="flbl" style="margin-left:8px">Actividad</span>
+    <input id="inAct" class="finput" type="text" placeholder="Buscar&hellip;" oninput="render()">
+    <button class="btn" onclick="document.getElementById('selDepto').value='';document.getElementById('inAct').value='';render()">&#10005;</button>
+  </div>
+</div>
+<div id="legend">
+  <span class="li"><span class="ld" style="background:#10b981"></span>Barras coloreadas por Paq</span>
+  <span style="color:#14532d">&#183;</span>
+  <span class="li"><span class="ld" style="background:#f59e0b;width:2px;height:12px;border-radius:1px"></span>Hoy</span>
+  <span style="margin-left:auto;font-size:10px;color:#166534">Hover para detalle completo</span>
+</div>
+<div id="mainRow">
+  <div id="sidebar">
+    <div id="sbHead">
+      <h2>&#128202; Reporte de Ciclos</h2>
+      <span class="close" onclick="toggleSidebar()">&#10005;</span>
+    </div>
+    <div id="sbSubtitle">
+      Ciclos en meses &middot; AVERAGE(PAQ1,PAQ2)/30<br>
+      <span style="color:#f59e0b">&#9646;</span> = promedio global &nbsp;
+      <span style="color:#4ade80">verde</span> = bajo promedio &nbsp;
+      <span style="color:#f87171">rojo</span> = sobre promedio
+    </div>
+    <div id="cyclesScroll"></div>
+    <div id="sbAvg">
+      <div class="avg-title" id="avgTitle">Promedio global (todos los Paq)</div>
+      <div id="avgRows"></div>
+    </div>
+  </div>
+  <div id="ganttArea">
+    <div id="hdrRow">
+      <div id="lhWrap">
+        <div class="lh-cell" style="width:40px">#</div>
+        <div class="lh-cell" style="width:130px">Departamento</div>
+        <div class="lh-cell" style="flex:1">Actividad</div>
+      </div>
+      <div id="tlScroll"><div id="tlInner"><div id="mRow"></div><div id="wRow"></div></div></div>
+    </div>
+    <div id="bodyScroll">
+      <div id="bodyInner">
+        <div id="leftCol"></div>
+        <div id="rightCol"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="tooltip">
+  <div class="tt-t" id="tt-a"></div>
+  <div class="tt-r"><span class="tt-dot" id="tt-dot"></span>Paq: <b id="tt-p"></b></div>
+  <div class="tt-sep"></div>
+  <div class="tt-r">A&ntilde;o: <b id="tt-yr"></b></div>
+  <div class="tt-r">Act. Macro: <b id="tt-mac"></b></div>
+  <div class="tt-r">Departamento: <b id="tt-dep"></b></div>
+  <div class="tt-r">Responsable: <b id="tt-resp"></b></div>
+  <div class="tt-r">Predecesor: <b id="tt-pred"></b></div>
+  <div class="tt-sep"></div>
+  <div class="tt-r">Inicio: <b id="tt-ini"></b></div>
+  <div class="tt-r">Fin: <b id="tt-fin"></b></div>
+  <div class="tt-r">D&iacute;as totales: <b id="tt-dias"></b></div>
+</div>
+<script>
+const RAW=[{"anio": "2027", "paq": "1", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2026-07-30", "dias": "1", "fin": "2026-07-31"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "1", "ini": "2026-08-03", "dias": "2", "fin": "2026-08-05"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2026-08-06", "dias": "5", "fin": "2026-08-14"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2026-08-18", "dias": "1", "fin": "2026-08-19"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2026-08-20", "dias": "5", "fin": "2026-08-26"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2026-08-06", "dias": "10", "fin": "2026-08-21"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2026-09-09", "dias": "1", "fin": "2026-09-10"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2026-09-11", "dias": "3", "fin": "2026-09-15"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2026-09-16", "dias": "3", "fin": "2026-09-18"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2026-10-08", "dias": "1", "fin": "2026-10-09"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2026-10-13", "dias": "3", "fin": "2026-10-16"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2026-10-19", "dias": "1", "fin": "2026-10-20"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2026-10-21", "dias": "3", "fin": "2026-10-23"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2026-10-26", "dias": "5", "fin": "2026-11-03"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2026-10-21", "dias": "3", "fin": "2026-10-23"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2026-10-28", "dias": "5", "fin": "2026-11-05"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2026-10-30", "dias": "4", "fin": "2026-11-06"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2026-11-03", "dias": "2", "fin": "2026-11-04"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2026-10-21", "dias": "35", "fin": "2026-12-14"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2026-10-13", "dias": "15", "fin": "2026-11-03"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2026-11-04", "dias": "30", "fin": "2026-12-17"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2026-12-15", "dias": "5", "fin": "2026-12-21"}, {"anio": "2027", "paq": "1", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2026-12-18", "dias": "5", "fin": "2026-12-25"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2026-09-03", "dias": "1", "fin": "2026-09-04"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "1", "ini": "2026-09-07", "dias": "2", "fin": "2026-09-09"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2026-09-10", "dias": "5", "fin": "2026-09-17"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2026-09-18", "dias": "1", "fin": "2026-09-21"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2026-09-22", "dias": "5", "fin": "2026-09-28"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2026-09-10", "dias": "10", "fin": "2026-09-23"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2026-10-13", "dias": "1", "fin": "2026-10-14"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2026-10-15", "dias": "3", "fin": "2026-10-19"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2026-10-20", "dias": "3", "fin": "2026-10-22"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2026-11-12", "dias": "1", "fin": "2026-11-13"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2026-11-17", "dias": "3", "fin": "2026-11-20"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2026-11-23", "dias": "1", "fin": "2026-11-24"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2026-11-25", "dias": "3", "fin": "2026-11-27"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2026-11-30", "dias": "5", "fin": "2026-12-07"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2026-11-25", "dias": "3", "fin": "2026-11-27"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2026-12-02", "dias": "5", "fin": "2026-12-10"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2026-12-04", "dias": "4", "fin": "2026-12-11"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2026-12-07", "dias": "2", "fin": "2026-12-09"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2026-11-25", "dias": "35", "fin": "2027-01-29"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2026-11-17", "dias": "15", "fin": "2026-12-07"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2026-12-09", "dias": "30", "fin": "2027-02-03"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-02-01", "dias": "5", "fin": "2027-02-05"}, {"anio": "2027", "paq": "2", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-02-04", "dias": "5", "fin": "2027-02-11"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2026-10-01", "dias": "1", "fin": "2026-10-02"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "1", "ini": "2026-10-05", "dias": "2", "fin": "2026-10-07"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2026-10-08", "dias": "5", "fin": "2026-10-16"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2026-10-19", "dias": "1", "fin": "2026-10-20"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2026-10-21", "dias": "5", "fin": "2026-10-27"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2026-10-08", "dias": "10", "fin": "2026-10-22"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2026-11-11", "dias": "1", "fin": "2026-11-12"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2026-11-13", "dias": "3", "fin": "2026-11-18"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2026-11-19", "dias": "3", "fin": "2026-11-23"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2026-12-14", "dias": "1", "fin": "2026-12-15"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2026-12-16", "dias": "3", "fin": "2026-12-21"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2026-12-22", "dias": "1", "fin": "2026-12-23"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2026-12-24", "dias": "3", "fin": "2027-01-12"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-01-13", "dias": "5", "fin": "2027-01-20"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2026-12-24", "dias": "3", "fin": "2027-01-12"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-01-15", "dias": "5", "fin": "2027-01-22"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-01-19", "dias": "4", "fin": "2027-01-25"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-01-20", "dias": "2", "fin": "2027-01-21"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2026-12-24", "dias": "35", "fin": "2027-02-26"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2026-12-16", "dias": "15", "fin": "2027-01-20"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-01-21", "dias": "30", "fin": "2027-03-03"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-03-01", "dias": "5", "fin": "2027-03-05"}, {"anio": "2027", "paq": "3", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-03-04", "dias": "5", "fin": "2027-03-11"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2026-10-30", "dias": "1", "fin": "2026-11-03"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "1", "ini": "2026-11-04", "dias": "2", "fin": "2026-11-06"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2026-11-09", "dias": "5", "fin": "2026-11-17"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2026-11-18", "dias": "1", "fin": "2026-11-19"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2026-11-20", "dias": "5", "fin": "2026-11-26"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2026-11-09", "dias": "10", "fin": "2026-11-23"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2026-12-11", "dias": "1", "fin": "2026-12-14"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2026-12-15", "dias": "3", "fin": "2026-12-17"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2026-12-18", "dias": "3", "fin": "2026-12-22"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-01-26", "dias": "1", "fin": "2027-01-27"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-01-28", "dias": "3", "fin": "2027-02-02"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-02-03", "dias": "1", "fin": "2027-02-04"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-02-05", "dias": "3", "fin": "2027-02-09"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-02-10", "dias": "5", "fin": "2027-02-17"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-02-05", "dias": "3", "fin": "2027-02-09"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-02-12", "dias": "5", "fin": "2027-02-19"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-02-16", "dias": "4", "fin": "2027-02-22"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-02-17", "dias": "2", "fin": "2027-02-18"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-02-05", "dias": "35", "fin": "2027-03-31"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-01-28", "dias": "15", "fin": "2027-02-17"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-02-18", "dias": "30", "fin": "2027-04-05"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-04-01", "dias": "5", "fin": "2027-04-07"}, {"anio": "2027", "paq": "4", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-04-06", "dias": "5", "fin": "2027-04-13"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2026-12-02", "dias": "1", "fin": "2026-12-03"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "1", "ini": "2026-12-04", "dias": "2", "fin": "2026-12-09"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2026-12-10", "dias": "5", "fin": "2026-12-17"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2026-12-18", "dias": "1", "fin": "2026-12-21"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2026-12-22", "dias": "5", "fin": "2027-01-12"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2026-12-10", "dias": "10", "fin": "2026-12-23"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-01-26", "dias": "1", "fin": "2027-01-27"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-01-28", "dias": "3", "fin": "2027-02-01"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-02-02", "dias": "3", "fin": "2027-02-04"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-02-24", "dias": "1", "fin": "2027-02-25"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-02-26", "dias": "3", "fin": "2027-03-03"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-03-04", "dias": "1", "fin": "2027-03-05"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-03-08", "dias": "3", "fin": "2027-03-10"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-03-11", "dias": "5", "fin": "2027-03-18"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-03-08", "dias": "3", "fin": "2027-03-10"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-03-15", "dias": "5", "fin": "2027-03-23"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-03-17", "dias": "4", "fin": "2027-03-24"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-03-18", "dias": "2", "fin": "2027-03-19"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-03-08", "dias": "35", "fin": "2027-04-29"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-02-26", "dias": "15", "fin": "2027-03-18"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-03-19", "dias": "30", "fin": "2027-05-04"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-04-30", "dias": "5", "fin": "2027-05-06"}, {"anio": "2027", "paq": "5", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-05-05", "dias": "5", "fin": "2027-05-12"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-01-18", "dias": "1", "fin": "2027-01-19"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-01-20", "dias": "2", "fin": "2027-01-22"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-01-25", "dias": "5", "fin": "2027-02-01"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-02-02", "dias": "1", "fin": "2027-02-03"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-02-04", "dias": "5", "fin": "2027-02-10"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-01-25", "dias": "10", "fin": "2027-02-05"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-02-24", "dias": "1", "fin": "2027-02-25"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-02-26", "dias": "3", "fin": "2027-03-02"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-03-03", "dias": "3", "fin": "2027-03-05"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-03-30", "dias": "1", "fin": "2027-03-31"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-04-01", "dias": "3", "fin": "2027-04-06"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-04-07", "dias": "1", "fin": "2027-04-08"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-04-09", "dias": "3", "fin": "2027-04-13"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-04-14", "dias": "5", "fin": "2027-04-21"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-04-09", "dias": "3", "fin": "2027-04-13"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-04-16", "dias": "5", "fin": "2027-04-23"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-04-20", "dias": "4", "fin": "2027-04-26"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-04-21", "dias": "2", "fin": "2027-04-22"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-04-09", "dias": "35", "fin": "2027-05-31"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-04-01", "dias": "15", "fin": "2027-04-21"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-04-22", "dias": "30", "fin": "2027-06-04"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-06-01", "dias": "5", "fin": "2027-06-08"}, {"anio": "2027", "paq": "6", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-06-04", "dias": "5", "fin": "2027-06-11"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-02-15", "dias": "1", "fin": "2027-02-16"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-02-17", "dias": "2", "fin": "2027-02-19"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-02-22", "dias": "5", "fin": "2027-03-01"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-03-02", "dias": "1", "fin": "2027-03-03"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-03-04", "dias": "5", "fin": "2027-03-10"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-02-22", "dias": "10", "fin": "2027-03-05"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-03-29", "dias": "1", "fin": "2027-03-30"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-03-31", "dias": "3", "fin": "2027-04-02"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-04-05", "dias": "3", "fin": "2027-04-07"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-04-27", "dias": "1", "fin": "2027-04-28"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-04-29", "dias": "3", "fin": "2027-05-04"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-05-05", "dias": "1", "fin": "2027-05-06"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-05-07", "dias": "3", "fin": "2027-05-12"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-05-13", "dias": "5", "fin": "2027-05-20"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-05-07", "dias": "3", "fin": "2027-05-12"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-05-17", "dias": "5", "fin": "2027-05-24"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-05-19", "dias": "4", "fin": "2027-05-25"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-05-20", "dias": "2", "fin": "2027-05-21"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-05-07", "dias": "35", "fin": "2027-06-30"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-04-29", "dias": "15", "fin": "2027-05-20"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-05-21", "dias": "30", "fin": "2027-07-06"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-07-01", "dias": "5", "fin": "2027-07-08"}, {"anio": "2027", "paq": "7", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-07-07", "dias": "5", "fin": "2027-07-14"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-03-15", "dias": "1", "fin": "2027-03-16"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-03-17", "dias": "2", "fin": "2027-03-19"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-03-23", "dias": "5", "fin": "2027-04-01"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-04-02", "dias": "1", "fin": "2027-04-05"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-04-06", "dias": "5", "fin": "2027-04-12"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-03-23", "dias": "10", "fin": "2027-04-07"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-04-26", "dias": "1", "fin": "2027-04-27"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-04-28", "dias": "3", "fin": "2027-04-30"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-05-03", "dias": "3", "fin": "2027-05-05"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-05-26", "dias": "1", "fin": "2027-05-27"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-05-28", "dias": "3", "fin": "2027-06-03"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-06-04", "dias": "1", "fin": "2027-06-08"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-06-09", "dias": "3", "fin": "2027-06-11"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-06-14", "dias": "5", "fin": "2027-06-21"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-06-09", "dias": "3", "fin": "2027-06-11"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-06-16", "dias": "5", "fin": "2027-06-23"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-06-18", "dias": "4", "fin": "2027-06-24"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-06-21", "dias": "2", "fin": "2027-06-22"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-06-09", "dias": "35", "fin": "2027-07-30"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-05-28", "dias": "15", "fin": "2027-06-21"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-06-22", "dias": "30", "fin": "2027-08-04"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-08-01", "dias": "5", "fin": "2027-08-05"}, {"anio": "2027", "paq": "8", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-08-04", "dias": "5", "fin": "2027-08-11"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-04-16", "dias": "1", "fin": "2027-04-19"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-04-20", "dias": "2", "fin": "2027-04-22"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-04-23", "dias": "5", "fin": "2027-04-30"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-05-03", "dias": "1", "fin": "2027-05-04"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-05-05", "dias": "5", "fin": "2027-05-12"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-04-23", "dias": "10", "fin": "2027-05-06"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-05-26", "dias": "1", "fin": "2027-05-27"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-05-28", "dias": "3", "fin": "2027-06-02"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-06-03", "dias": "3", "fin": "2027-06-08"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-06-28", "dias": "1", "fin": "2027-06-29"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-06-30", "dias": "3", "fin": "2027-07-06"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-07-07", "dias": "1", "fin": "2027-07-08"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-07-09", "dias": "3", "fin": "2027-07-13"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-07-14", "dias": "5", "fin": "2027-07-22"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-07-09", "dias": "3", "fin": "2027-07-13"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-07-16", "dias": "5", "fin": "2027-07-26"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-07-21", "dias": "4", "fin": "2027-07-27"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-07-22", "dias": "2", "fin": "2027-07-23"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-07-09", "dias": "35", "fin": "2027-08-31"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-06-30", "dias": "15", "fin": "2027-07-22"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-07-23", "dias": "30", "fin": "2027-09-03"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-09-01", "dias": "5", "fin": "2027-09-07"}, {"anio": "2027", "paq": "9", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-09-06", "dias": "5", "fin": "2027-09-13"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-05-12", "dias": "1", "fin": "2027-05-13"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-05-14", "dias": "2", "fin": "2027-05-18"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-05-19", "dias": "5", "fin": "2027-05-26"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-05-27", "dias": "1", "fin": "2027-05-28"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-06-01", "dias": "5", "fin": "2027-06-08"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-05-19", "dias": "10", "fin": "2027-06-02"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-06-22", "dias": "1", "fin": "2027-06-23"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-06-24", "dias": "3", "fin": "2027-06-28"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-06-29", "dias": "3", "fin": "2027-07-01"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-07-23", "dias": "1", "fin": "2027-07-26"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-07-27", "dias": "3", "fin": "2027-07-30"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-08-02", "dias": "1", "fin": "2027-08-03"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-08-04", "dias": "3", "fin": "2027-08-06"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-08-09", "dias": "5", "fin": "2027-08-17"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-08-04", "dias": "3", "fin": "2027-08-06"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-08-11", "dias": "5", "fin": "2027-08-19"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-08-13", "dias": "4", "fin": "2027-08-20"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-08-17", "dias": "2", "fin": "2027-08-18"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-08-04", "dias": "40", "fin": "2027-09-30"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-07-27", "dias": "15", "fin": "2027-08-17"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-08-18", "dias": "30", "fin": "2027-09-28"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-10-01", "dias": "5", "fin": "2027-10-07"}, {"anio": "2027", "paq": "10", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-10-06", "dias": "5", "fin": "2027-10-13"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-06-11", "dias": "1", "fin": "2027-06-14"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-06-15", "dias": "2", "fin": "2027-06-17"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-06-18", "dias": "5", "fin": "2027-06-25"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-06-28", "dias": "1", "fin": "2027-06-29"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-06-30", "dias": "5", "fin": "2027-07-07"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-06-18", "dias": "10", "fin": "2027-07-01"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-07-22", "dias": "1", "fin": "2027-07-23"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-07-26", "dias": "3", "fin": "2027-07-28"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-07-29", "dias": "3", "fin": "2027-08-02"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-08-23", "dias": "1", "fin": "2027-08-24"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-08-25", "dias": "3", "fin": "2027-08-30"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-08-31", "dias": "1", "fin": "2027-09-01"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-09-02", "dias": "3", "fin": "2027-09-06"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-09-07", "dias": "5", "fin": "2027-09-14"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-09-02", "dias": "3", "fin": "2027-09-06"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-09-09", "dias": "5", "fin": "2027-09-16"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-09-13", "dias": "4", "fin": "2027-09-17"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-09-14", "dias": "2", "fin": "2027-09-15"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-09-02", "dias": "40", "fin": "2027-10-29"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-08-25", "dias": "15", "fin": "2027-09-14"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-09-15", "dias": "30", "fin": "2027-10-27"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-10-30", "dias": "5", "fin": "2027-11-05"}, {"anio": "2027", "paq": "11", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-11-04", "dias": "5", "fin": "2027-11-11"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "GERENCIA/COMERCIAL", "resp": "", "num": "1", "act": "PRESUPUESTO COMERCIAL", "pred": "", "ini": "2027-07-06", "dias": "1", "fin": "2027-07-07"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "GERENCIA / PLANEACION / CIAL", "resp": "", "num": "2", "act": "CONCILIACION PPTO PLANEACION Y CIAL", "pred": "23", "ini": "2027-07-08", "dias": "2", "fin": "2027-07-12"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PLANEACIÓN", "resp": "", "num": "3", "act": "OTB", "pred": "2", "ini": "2027-07-13", "dias": "5", "fin": "2027-07-21"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "4", "act": "ENTREGA ESTRUCTURA OTB COLECCIÓN", "pred": "3", "ini": "2027-07-22", "dias": "1", "fin": "2027-07-23"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "5", "act": "ENVÍO A PROVEEDOR PROYECCION AÑO + PARTIC. OTB", "pred": "4", "ini": "2027-07-26", "dias": "5", "fin": "2027-07-30"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "EXPERIENCIA", "resp": "", "num": "6", "act": "CONCERTACION PAC SOMBRILLA", "pred": "2", "ini": "2027-07-13", "dias": "10", "fin": "2027-07-27"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "7", "act": "COMITÉ EN PAPEL", "pred": "4", "ini": "2027-08-13", "dias": "1", "fin": "2027-08-17"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "8", "act": "DILIGENCIAR PARRILLA UNDS, CURVAS Y COMPRA DE TELA", "pred": "7", "ini": "2027-08-18", "dias": "3", "fin": "2027-08-20"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "9", "act": "ENVIAR PARRILLA A LOS PROVEEDORES", "pred": "8", "ini": "2027-08-23", "dias": "3", "fin": "2027-08-25"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "10", "act": "COMITÉ PRENDA", "pred": "7", "ini": "2027-09-14", "dias": "1", "fin": "2027-09-15"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "11", "act": "CONFIRMACION COSTO", "pred": "10", "ini": "2027-09-16", "dias": "3", "fin": "2027-09-21"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "12", "act": "APROBACION COSTOS Y PVP", "pred": "11", "ini": "2027-09-22", "dias": "1", "fin": "2027-09-23"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "13", "act": "ENVIO INFORMACION MASTER PROVEEDOR", "pred": "12", "ini": "2027-09-24", "dias": "3", "fin": "2027-09-28"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "14", "act": "LIBERACIÓN MASTER", "pred": "13", "ini": "2027-09-29", "dias": "5", "fin": "2027-10-06"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCTO", "resp": "", "num": "15", "act": "DISTRIBUCION SIEC", "pred": "12", "ini": "2027-09-24", "dias": "3", "fin": "2027-09-28"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "16", "act": "CREAR SOLPED", "pred": "15", "ini": "2027-10-01", "dias": "5", "fin": "2027-10-08"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "17", "act": "GENERAR OC Y BASES DE DATOS", "pred": "16", "ini": "2027-10-05", "dias": "4", "fin": "2027-10-11"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "PRODUCCIÓN", "resp": "", "num": "18", "act": "LIBERAR OC", "pred": "17", "ini": "2027-10-06", "dias": "2", "fin": "2027-10-07"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "19", "act": "PRODUCCIÓN", "pred": "12", "ini": "2027-09-24", "dias": "40", "fin": "2027-11-24"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "20", "act": "ENTREGA MUESTRAS FOTOS", "pred": "10", "ini": "2027-09-16", "dias": "15", "fin": "2027-10-06"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "MERCADEO", "resp": "", "num": "21", "act": "TOMA DE FOTOS", "pred": "20", "ini": "2027-10-07", "dias": "30", "fin": "2027-11-22"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "TEXTIFULL", "resp": "", "num": "22", "act": "INGRESO PRODUCCIÓN", "pred": "19", "ini": "2027-11-25", "dias": "5", "fin": "2027-12-01"}, {"anio": "2027", "paq": "12", "macro": "", "depto": "VISUAL/COMERCIAL", "resp": "", "num": "23", "act": "VENTA ( EXHIBICIÓN)", "pred": "22", "ini": "2027-11-30", "dias": "5", "fin": "2027-12-07"}];
+const CYCLES={"1": {"CICLO TOTAL": 4.6, "OTB": 1.133, "DESARROLLO": 1.3, "PRODUCCION": 2.067}, "2": {"CICLO TOTAL": 5.033, "OTB": 1.1, "DESARROLLO": 1.333, "PRODUCCION": 2.433}, "3": {"CICLO TOTAL": 5.033, "OTB": 1.133, "DESARROLLO": 1.333, "PRODUCCION": 2.4}, "4": {"CICLO TOTAL": 5.1, "OTB": 1.067, "DESARROLLO": 1.7, "PRODUCCION": 2.067}, "5": {"CICLO TOTAL": 4.967, "OTB": 1.567, "DESARROLLO": 1.2, "PRODUCCION": 2.067}, "6": {"CICLO TOTAL": 4.467, "OTB": 1.0, "DESARROLLO": 1.367, "PRODUCCION": 2.033}, "7": {"CICLO TOTAL": 4.533, "OTB": 1.167, "DESARROLLO": 1.2, "PRODUCCION": 2.1}, "8": {"CICLO TOTAL": 4.633, "OTB": 1.133, "DESARROLLO": 1.267, "PRODUCCION": 1.933}, "9": {"CICLO TOTAL": 4.6, "OTB": 1.1, "DESARROLLO": 1.367, "PRODUCCION": 2.033}, "10": {"CICLO TOTAL": 4.733, "OTB": 1.133, "DESARROLLO": 1.333, "PRODUCCION": 2.167}, "11": {"CICLO TOTAL": 4.7, "OTB": 1.133, "DESARROLLO": 1.3, "PRODUCCION": 2.167}, "12": {"CICLO TOTAL": 4.733, "OTB": 1.033, "DESARROLLO": 1.2, "PRODUCCION": 2.3}};
+const AVGS={"CICLO TOTAL": 4.761, "OTB": 1.142, "DESARROLLO": 1.325, "PRODUCCION": 2.147};
+const PAQ_COLORS=["#10b981", "#60a5fa", "#8b5cf6", "#a78bfa", "#ec4899", "#f472b6", "#f97316", "#fb923c", "#eab308", "#fde047", "#14b8a6", "#5eead4", "#22c55e", "#4ade80", "#ef4444", "#f87171", "#06b6d4", "#67e8f9", "#a855f7", "#d8b4fe", "#f43f5e", "#fb7185", "#84cc16", "#bef264"];
+const CYCLE_KEYS=['OTB','DESARROLLO','PRODUCCION'];
+const CYCLE_LBL={'OTB':'OTB','DESARROLLO':'Desarrollo','PRODUCCION':'Producción'};
+const CYCLE_COL={'OTB':'#0ea5e9','DESARROLLO':'#10b981','PRODUCCION':'#f59e0b'};
+const TOT_KEYS=['OTB','DESARROLLO','PRODUCCION'];
+
+const ALL_PAQS=[...new Set(RAW.map(d=>d.paq))].sort((a,b)=>{
+  const[na,pa]=a.split('-').map(Number),[nb,pb]=b.split('-').map(Number);
+  return na!==nb?na-nb:pa-pb;
+});
+function paqCol(p){return PAQ_COLORS[ALL_PAQS.indexOf(p)]||'#4ade80'}
+
+const ACTS=[],DEPTO={};
+RAW.forEach(d=>{if(!ACTS.includes(d.act)){ACTS.push(d.act);DEPTO[d.act]=d.depto;}});
+// Ordenar actividades por fecha de inicio más temprana entre todos los PAQs
+const ACT_MIN_INI={};
+RAW.forEach(d=>{if(d.ini&&(!ACT_MIN_INI[d.act]||d.ini<ACT_MIN_INI[d.act]))ACT_MIN_INI[d.act]=d.ini;});
+ACTS.sort((a,b)=>{const da=ACT_MIN_INI[a]||'',db=ACT_MIN_INI[b]||'';return da<db?-1:da>db?1:0;});
+const LUP={};
+RAW.forEach(d=>{if(!LUP[d.act])LUP[d.act]={};LUP[d.act][d.paq]=d;});
+
+const DAY_PX=3.2,BAR_H=12,BAR_GAP=3,ROW_PAD=5;
+const T0=new Date('2026-05-01'),T1=new Date('2028-01-01');
+const TW=Math.round((T1-T0)/86400000)*DAY_PX;
+const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function pd(s){return new Date(s+'T00:00:00')}
+function dx(d){return Math.max(0,Math.round((d-T0)/86400000)*DAY_PX)}
+function fmt(s){return pd(s).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'})}
+function rh(n){return Math.max(28,n*(BAR_H+BAR_GAP)+ROW_PAD*2)}
+function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function hi(t,q){if(!q)return t;return t.replace(new RegExp('('+esc(q)+')','gi'),'<mark>$1</mark>')}
+
+// ── SIDEBAR ──────────────────────────────────────────────────────────
+let sidebarOpen=false;
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('open',sidebarOpen);
+  if(sidebarOpen)updateSidebar();
+}
+
+function updateSidebar(){
+  if(!sidebarOpen)return;
+  const sel=[...CHECKED].sort((a,b)=>{
+    const[na,pa]=a.split('-').map(Number),[nb,pb]=b.split('-').map(Number);
+    return na!==nb?na-nb:pa-pb;
+  });
+  const scrl=document.getElementById('cyclesScroll');
+  scrl.innerHTML='';
+  if(!sel.length){
+    scrl.innerHTML='<div style="padding:20px;text-align:center;color:#166534;font-size:12px">Selecciona al menos un Paq</div>';
+    return;
+  }
+  // Calcular promedios dinámicos solo de los PAQ seleccionados
+  const dynAvgs={};
+  CYCLE_KEYS.forEach(k=>{
+    const vals=sel.map(p=>CYCLES[p]&&CYCLES[p][k]!=null?CYCLES[p][k]:null).filter(v=>v!==null);
+    dynAvgs[k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  });
+  // Actualizar título según selección
+  const allSelected=sel.length===ALL_PAQS.length;
+  const titleEl=document.getElementById('avgTitle');
+  if(titleEl)titleEl.textContent=allSelected?'Promedio global (todos los Paq)':'Promedio Paq seleccionados ('+sel.join(', ')+')';
+  const maxVals={};
+  CYCLE_KEYS.forEach(k=>{
+    const vals=sel.map(p=>CYCLES[p]&&CYCLES[p][k]!=null?CYCLES[p][k]:0);
+    maxVals[k]=Math.max(...vals)*1.15||1;
+  });
+  sel.forEach(paq=>{
+    const cyc=CYCLES[paq]||{};
+    const col=paqCol(paq);
+    const card=document.createElement('div');
+    card.className='cyc-paq';
+    card.innerHTML=`<div class="cyc-paq-hdr"><span class="pdot" style="background:${col}"></span><span class="pname">PAQ ${paq}</span></div>`;
+    const bars=document.createElement('div');
+    bars.className='cyc-bars';
+    CYCLE_KEYS.forEach(k=>{
+      const val=cyc[k]!=null?cyc[k]:null;
+      const avg=dynAvgs[k];
+      const pct=val!=null?Math.round((val/maxVals[k])*100):0;
+      const avgPct=Math.round((avg/maxVals[k])*100);
+      const cls=val!=null?(val>avg+0.2?'val-hi':val<avg-0.2?'val-lo':'val-ok'):'val-ok';
+      bars.innerHTML+=`<div class="cyc-row">
+        <span class="cyc-lbl">${CYCLE_LBL[k]}</span>
+        <div class="cyc-track">
+          <div class="cyc-fill" style="width:${pct}%;background:${CYCLE_COL[k]}88"></div>
+          <div class="cyc-avg-mark" style="left:${avgPct}%"></div>
+        </div>
+        <span class="cyc-val ${cls}">${val!=null?val.toFixed(2):'—'}</span>
+      </div>`;
+    });
+    // TOTAL OTB + DISEÑO + PCC
+    const total=cyc['CICLO TOTAL']!=null?cyc['CICLO TOTAL']:null;
+    bars.innerHTML+=`<div class="cyc-total-row">
+      <span class="cyc-total-lbl">Ciclo Total (Presupuesto→Ingreso Prod.)</span>
+      <span class="cyc-total-val">${total!==null?total.toFixed(2)+' m':'—'}</span>
+    </div>`;
+    card.appendChild(bars);
+    scrl.appendChild(card);
+  });
+  // Averages footer
+  const avgDiv=document.getElementById('avgRows');
+  avgDiv.innerHTML='';
+  CYCLE_KEYS.forEach(k=>{
+    const d=document.createElement('div');
+    d.className='avg-row2';
+    d.innerHTML=`<span class="avg-lbl2">${CYCLE_LBL[k]}</span><span class="avg-val2">${dynAvgs[k].toFixed(2)} m</span>`;
+    avgDiv.appendChild(d);
+  });
+  const sep=document.createElement('div');
+  sep.style.cssText='height:1px;background:#064e3b;margin:5px 0';
+  avgDiv.appendChild(sep);
+  const avgTotal=dynAvgs['CICLO TOTAL']!=null?dynAvgs['CICLO TOTAL']:TOT_KEYS.reduce((s,k)=>s+dynAvgs[k],0);
+  const tot=document.createElement('div');
+  tot.className='avg-row2';
+  tot.innerHTML=`<span class="avg-lbl2" style="color:#fde68a;font-weight:700">Ciclo Total (Presupuesto→Ingreso Prod.)</span><span class="avg-val2" style="color:#fde68a;font-size:13px">${avgTotal.toFixed(2)} m</span>`;
+  avgDiv.appendChild(tot);
+}
+
+// ── PAQ CHIPS ────────────────────────────────────────────────────────
+const CHECKED=new Set(['1-1','1-2']);
+ALL_PAQS.forEach(p=>{
+  const col=paqCol(p);
+  const chip=document.createElement('label');
+  chip.className='pchip'+(CHECKED.has(p)?' on':'');
+  chip.style.setProperty('--c',col);
+  chip.innerHTML=`<input type="checkbox" value="${p}"${CHECKED.has(p)?' checked':''}><span class="dot" style="background:${col}"></span><span class="lbl">PAQ ${p}</span>`;
+  chip.querySelector('input').addEventListener('change',function(){
+    CHECKED[this.checked?'add':'delete'](p);
+    chip.classList.toggle('on',this.checked);
+    render();updateSidebar();
+  });
+  document.getElementById('paqGrid').appendChild(chip);
+});
+function selAll(){ALL_PAQS.forEach(p=>{CHECKED.add(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=true;c.closest('.pchip').classList.add('on');});render();updateSidebar();}
+function selNone(){ALL_PAQS.forEach(p=>{CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=false;c.closest('.pchip').classList.remove('on');});render();updateSidebar();}
+function selPaq(n){ALL_PAQS.forEach(p=>{const ok=p.endsWith('-'+n);ok?CHECKED.add(p):CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=ok;c.closest('.pchip').classList.toggle('on',ok);});render();updateSidebar();}
+
+// ── DEPTO DROPDOWN ───────────────────────────────────────────────────
+[...new Set(RAW.map(d=>d.depto).filter(Boolean))].sort().forEach(d=>{
+  const o=document.createElement('option');o.value=d;o.textContent=d;
+  document.getElementById('selDepto').appendChild(o);
+});
+
+// ── TIMELINE HEADER ──────────────────────────────────────────────────
+(function(){
+  const mr=document.getElementById('mRow'),wr=document.getElementById('wRow');
+  let cur=new Date(T0);
+  while(cur<T1){
+    const y=cur.getFullYear(),m=cur.getMonth();
+    const ds=new Date(y,m,1)<T0?T0:new Date(y,m,1);
+    const de=new Date(y,m+1,1)>T1?T1:new Date(y,m+1,1);
+    const w=Math.round((de-ds)/86400000)*DAY_PX;
+    const mc=document.createElement('div');mc.className='mc';mc.style.width=w+'px';mc.textContent=MN[m]+' '+y;mr.appendChild(mc);
+    let wd=new Date(ds);
+    while(wd<de){
+      const we=new Date(wd);we.setDate(we.getDate()+7);
+      const ww=Math.round(((we>de?de:we)-wd)/86400000)*DAY_PX;
+      const wc=document.createElement('div');wc.className='wc';wc.style.width=ww+'px';wc.textContent=wd.getDate();wr.appendChild(wc);wd=we;
+    }
+    cur=new Date(y,m+1,1);
+  }
+  document.getElementById('tlInner').style.width=TW+'px';
+})();
+document.getElementById('bodyScroll').addEventListener('scroll',function(){
+  document.getElementById('tlScroll').scrollLeft=this.scrollLeft;
+},{passive:true});
+
+// ── RENDER GANTT ─────────────────────────────────────────────────────
+function render(){
+  const sel=[...CHECKED].sort((a,b)=>{
+    const[na,pa]=a.split('-').map(Number),[nb,pb]=b.split('-').map(Number);
+    return na!==nb?na-nb:pa-pb;
+  });
+  const depF=document.getElementById('selDepto').value;
+  const actF=document.getElementById('inAct').value.toLowerCase().trim();
+  const lc=document.getElementById('leftCol'),rc=document.getElementById('rightCol');
+  lc.innerHTML='';rc.innerHTML='';
+  if(!sel.length){document.getElementById('countLabel').textContent='Selecciona al menos un Paq';return;}
+  const visActs=ACTS.filter(act=>{
+    if(depF&&(DEPTO[act]||'')!==depF)return false;
+    if(actF&&!act.toLowerCase().includes(actF))return false;
+    return sel.some(p=>LUP[act]&&LUP[act][p]);
+  });
+  document.getElementById('countLabel').textContent=visActs.length+' actividades · '+sel.length+' Paq';
+  let totalH=0;const tops=[],heights=[];
+  visActs.forEach(act=>{
+    const n=sel.filter(p=>LUP[act]&&LUP[act][p]).length;
+    const h=rh(n);tops.push(totalH);heights.push(h);totalH+=h;
+  });
+  rc.style.width=TW+'px';rc.style.height=totalH+'px';
+  let cur=new Date(T0);
+  while(cur<T1){
+    const vl=document.createElement('div');vl.className='vg';vl.style.cssText='left:'+dx(cur)+'px;height:'+totalH+'px';rc.appendChild(vl);
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
+  const tod=new Date();
+  if(tod>=T0&&tod<=T1){
+    const tl=document.createElement('div');tl.className='tday';tl.style.cssText='left:'+dx(tod)+'px;height:'+totalH+'px';
+    const tb=document.createElement('span');tb.style.cssText='position:absolute;top:2px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#000;font-size:8px;font-weight:700;padding:1px 3px;border-radius:2px;white-space:nowrap';tb.textContent='HOY';
+    tl.appendChild(tb);rc.appendChild(tl);
+  }
+  visActs.forEach((act,i)=>{
+    const h=heights[i],top=tops[i];
+    const fp=sel.find(p=>LUP[act]&&LUP[act][p]);
+    const fi=LUP[act][fp];
+    const lr=document.createElement('div');lr.className='lr';lr.style.height=h+'px';
+    lr.innerHTML=`<div class="lr-num">${fi.num}</div><div class="lr-dep" title="${fi.depto}">${hi(fi.depto,depF)}</div><div class="lr-act" title="${act}">${hi(act,actF)}</div>`;
+    lc.appendChild(lr);
+    const gr=document.createElement('div');gr.className='gr';
+    gr.style.cssText='top:'+top+'px;left:0;width:'+TW+'px;height:'+h+'px';
+    sel.filter(p=>LUP[act]&&LUP[act][p]).forEach((paq,bi)=>{
+      const it=LUP[act][paq];
+      const sd=pd(it.ini),ed=pd(it.fin);
+      const bx=dx(sd),bw=Math.max(3,Math.round((ed-sd)/86400000)*DAY_PX+DAY_PX);
+      const by=ROW_PAD+bi*(BAR_H+BAR_GAP);
+      const pc=paqCol(paq);
+      const bar=document.createElement('div');bar.className='bar';
+      bar.style.cssText=`left:${bx}px;top:${by}px;width:${bw}px;height:${BAR_H}px;background:${pc}99;outline:1.5px solid ${pc};outline-offset:-1px`;
+      if(bw>26){const bl=document.createElement('div');bl.className='bar-lbl';bl.textContent='PAQ '+paq+' ('+it.dias+'d)';bar.appendChild(bl);}
+      bar.addEventListener('mouseenter',e=>showTT(e,it,paq));
+      bar.addEventListener('mouseleave',()=>document.getElementById('tooltip').style.display='none');
+      bar.addEventListener('mousemove',mvTT);
+      gr.appendChild(bar);
+    });
+    rc.appendChild(gr);
+  });
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────────
+function showTT(e,it,paq){
+  document.getElementById('tt-a').textContent=it.act;
+  document.getElementById('tt-dot').style.background=paqCol(paq);
+  document.getElementById('tt-p').textContent='PAQ '+paq;
+  document.getElementById('tt-yr').textContent=it.anio;
+  document.getElementById('tt-mac').textContent=it.macro||'—';
+  document.getElementById('tt-dep').textContent=it.depto||'—';
+  document.getElementById('tt-resp').textContent=it.resp||'—';
+  document.getElementById('tt-pred').textContent=it.pred||'—';
+  document.getElementById('tt-ini').textContent=fmt(it.ini);
+  document.getElementById('tt-fin').textContent=fmt(it.fin);
+  document.getElementById('tt-dias').textContent=it.dias;
+  document.getElementById('tooltip').style.display='block';mvTT(e);
+}
+function mvTT(e){
+  let lx=e.clientX+16,ly=e.clientY+16;
+  if(lx+320>window.innerWidth)lx=e.clientX-320;
+  if(ly+240>window.innerHeight)ly=e.clientY-240;
+  const tt=document.getElementById('tooltip');tt.style.left=lx+'px';tt.style.top=ly+'px';
+}
+
+render();
+</script>
+</body>
+</html>
