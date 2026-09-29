@@ -110,8 +110,6 @@ mark{background:#f59e0b33;color:#fde68a;border-radius:2px;padding:0 1px}
     <span class="flbl">Paq</span>
     <button class="btn btn-p" onclick="selAll()">Todos</button>
     <button class="btn" onclick="selNone()">Limpiar</button>
-    <button class="btn" onclick="selPaq(1)">PAQ 1</button>
-    <button class="btn" onclick="selPaq(2)">PAQ 2</button>
     <div id="paqGrid"></div>
   </div>
   <div class="frow">
@@ -300,7 +298,7 @@ function updateSidebar(){
 }
 
 // ── PAQ CHIPS ────────────────────────────────────────────────────────
-const CHECKED=new Set(['1-1','1-2']);
+const CHECKED=new Set(ALL_PAQS);
 ALL_PAQS.forEach(p=>{
   const col=paqCol(p);
   const chip=document.createElement('label');
@@ -315,8 +313,7 @@ ALL_PAQS.forEach(p=>{
   document.getElementById('paqGrid').appendChild(chip);
 });
 function selAll(){ALL_PAQS.forEach(p=>{CHECKED.add(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=true;c.closest('.pchip').classList.add('on');});render();updateSidebar();}
-function selNone(){ALL_PAQS.forEach(p=>{CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=false;c.closest('.pchip').classList.remove('on');});render();updateSidebar();}
-function selPaq(n){ALL_PAQS.forEach(p=>{const ok=p.endsWith('-'+n);ok?CHECKED.add(p):CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=ok;c.closest('.pchip').classList.toggle('on',ok);});render();updateSidebar();}
+function selNone(){ALL_PAQS.forEach(p=>{CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=false;c.closest('.pchip').classList.remove('on');});render();updateSidebar();}"]`);c.checked=ok;c.closest('.pchip').classList.toggle('on',ok);});render();updateSidebar();}
 
 // ── DEPTO DROPDOWN ───────────────────────────────────────────────────
 [...new Set(RAW.map(d=>d.depto).filter(Boolean))].sort().forEach(d=>{
