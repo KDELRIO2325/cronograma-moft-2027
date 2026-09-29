@@ -313,7 +313,7 @@ ALL_PAQS.forEach(p=>{
   document.getElementById('paqGrid').appendChild(chip);
 });
 function selAll(){ALL_PAQS.forEach(p=>{CHECKED.add(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=true;c.closest('.pchip').classList.add('on');});render();updateSidebar();}
-function selNone(){ALL_PAQS.forEach(p=>{CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=false;c.closest('.pchip').classList.remove('on');});render();updateSidebar();}"]`);c.checked=ok;c.closest('.pchip').classList.toggle('on',ok);});render();updateSidebar();}
+function selNone(){ALL_PAQS.forEach(p=>{CHECKED.delete(p);const c=document.querySelector(`input[value="${p}"]`);c.checked=false;c.closest('.pchip').classList.remove('on');});render();updateSidebar();}
 
 // ── DEPTO DROPDOWN ───────────────────────────────────────────────────
 [...new Set(RAW.map(d=>d.depto).filter(Boolean))].sort().forEach(d=>{
